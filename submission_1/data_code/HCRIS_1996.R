@@ -24,3 +24,40 @@ hcris.vars = rbind(hcris.vars,c('county','S200000','00101','0400','alpha'))
 colnames(hcris.vars)=c("variable","WKSHT_CD","LINE_NUM","CLMN_NUM","source")
 
 # pulling relevant data out of raw data uploads 
+for (i in 1998:2011) {
+  HCRIS.alpha=read_csv(paste0("data/input/HCRIS_v1996/HospitalFY",i,"/hosp_",i,"_ALPHA.CSV"),
+                       col_names=c('RPT_REC_NUM','WKSHT_CD','LINE_NUM','CLMN_NUM','ITM_VAL_NUM'))
+  HCRIS.numeric=read_csv(paste0("data/input/HCRIS_v1996/HospitalFY",i,"/hosp_",i,"_NMRC.CSV"),
+                         col_names=c('RPT_REC_NUM','WKSHT_CD','LINE_NUM','CLMN_NUM','ITM_VAL_NUM'))
+  HCRIS.report=read_csv(paste0("data/input/HCRIS_v1996/HospitalFY",i,"/hosp_",i,"_RPT.CSV",sep=""),
+                        col_names=c('RPT_REC_NUM','PRVDR_CTRL_TYPE_CD','PRVDR_NUM','NPI',
+                                    'RPT_STUS_CD','FY_BGN_DT','FY_END_DT','PROC_DT',
+                                    'INITL_RPT_SW','LAST_RPT_SW','TRNSMTL_NUM','FI_NUM',
+                                    'ADR_VNDR_CD','FI_CREAT_DT','UTIL_CD','NPR_DT',
+                                    'SPEC_IND','FI_RCPT_DT'))
+  final.reports = HCRIS.report %>%
+    select(report=RPT_REC_NUM, provider_number=PRVDR_NUM, npi=NPI, 
+           fy_start=FY_BGN_DT, fy_end=FY_END_DT, date_processed=PROC_DT, 
+           date_created=FI_CREAT_DT, status=RPT_STUS_CD) %>%
+    mutate(year=i)
+  
+  for (v in 1:nrow(hcris.vars)) {
+    hcris.data=get(paste("HCRIS.",hcris.vars[v,5],sep=""))
+    var.name=quo_name(hcris.vars[v,1])    
+    val = hcris.data %>%
+      filter(WKSHT_CD==hcris.vars[v,2], LINE_NUM==hcris.vars[v,3], CLMN_NUM==hcris.vars[v,4]) %>%
+      select(report=RPT_REC_NUM, !!var.name:=ITM_VAL_NUM) 
+    assign(paste("val.",v,sep=""),val)
+    final.reports=left_join(final.reports, 
+              get(paste("val.",v,sep="")),
+              by="report")
+  }
+  assign(paste("final.reports.",i,sep=""),final.reports)
+  if (i==1998) {
+    final.hcris.v1996=final.reports.1998
+  } else {
+    final.hcris.v1996=rbind(final.hcris.v1996,get(paste("final.reports.",i,sep="")))
+  }
+  
+}
+write_rds(final.hcris.v1996,'data/output/HCRIS_Data_v1996.rds')
