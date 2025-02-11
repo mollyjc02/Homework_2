@@ -23,6 +23,7 @@ hcris.vars = rbind(hcris.vars,c('zip','S200000','00101','0300','alpha'))
 hcris.vars = rbind(hcris.vars,c('county','S200000','00101','0400','alpha'))
 colnames(hcris.vars)=c("variable","WKSHT_CD","LINE_NUM","CLMN_NUM","source")
 
+
 # pulling relevant data out of raw data uploads 
 for (i in 1998:2011) {
   HCRIS.alpha=read_csv(paste0("data/input/HCRIS_v1996/HospitalFY",i,"/hosp_",i,"_ALPHA.CSV"),
@@ -60,4 +61,5 @@ for (i in 1998:2011) {
   }
   
 }
+
 write_rds(final.hcris.v1996,'data/output/HCRIS_Data_v1996.rds')
