@@ -103,6 +103,7 @@ duplicate.hcris3 =
               "mcaid_discharges", "tot_mcare_payment", "secondary_mcare_payment",
               "hvbp_payment", "hrrp_payment"),list(~ .*(time_diff/total_days)))
 
+
 ## form weighted average of values for each fiscal year
 unique.hcris4 = 
   duplicate.hcris3 %>%
