@@ -1,0 +1,28 @@
+---
+title: "Homework 2"
+subtitle: "ECON 470, Spring 2025"
+author: "Molly Catlin"
+format:
+  pdf:
+    output-file: "catlin_molly_hwk2_s1"
+    output-ext:  "pdf"
+    header-includes:
+      - \usepackage{float}
+      - \floatplacement{table}{H}
+---
+
+```{r}
+#| include: false
+
+hospital_counts_over_time = 
+  duplicate.hospitals %>%
+  group_by(fyear) %>%
+  summarise(num_hospitals = n())  # Count unique hospitals per year
+
+# Plot the number of hospitals over time
+ggplot(hospital_counts_over_time, aes(x = fyear, y = num_hospitals)) +
+  geom_line(color = "blue", size = 1.2) +
+  labs(title = "Number of Hospitals Filing More Than One Report per Year",
+       x = "Year",
+       y = "Number of Hospitals") +
+  theme_minimal()
