@@ -53,11 +53,14 @@ final.hcris.data <- final.hcris.data %>%
   )
 
 ## Step 2: Filter out negative or invalid prices and any other outliers (e.g., top 1% of prices)
-final.hcris.data_clean <- final.hcris.data %>%
+final.hcris.data <- final.hcris.data %>%
   filter(!is.na(price) & price > 0)
 
 ## Step 3: Create a violin plot to show the distribution of estimated prices by year
-ggplot(final.hcris.data_clean, aes(x = as.factor(year), y = price)) +
+final.hcris.data <- final.hcris.data_clean %>%
+  mutate(log_price = log(price))
+
+ggplot(final.hcris.data, aes(x = as.factor(year), y = log_price)) +
   geom_violin(trim = TRUE, fill = "skyblue", color = "black") +
   labs(
     title = "Distribution of Estimated Prices by Year",
@@ -105,11 +108,11 @@ bed_quartiles <- quantile(final.hcris.2012$beds, probs = c(0.25, 0.50, 0.75), na
 ## Assign each hospital to a bed size quartile
 final.hcris.2012 <- final.hcris.2012 %>%
 mutate(
-Q1 = ifelse(beds <= bed_quartiles[1], 1, 0),
+Q1 = ifelse(beds <= bed_quartiles[1] & beds > 0, 1, 0),
 Q2 = ifelse(beds > bed_quartiles[1] & beds <= bed_quartiles[2], 1, 0),
 Q3 = ifelse(beds > bed_quartiles[2] & beds <= bed_quartiles[3], 1, 0),
 Q4 = ifelse(beds > bed_quartiles[3], 1, 0)
-)
+) 
 
 ## Calculate average prices by quartile and penalty status
 quartile_summary <- final.hcris.2012 %>%
@@ -135,27 +138,54 @@ install.packages("WeightIt")
 colnames(final.hcris.2012)
 
 lp.covs <- final.hcris.2012 %>%
-  select(beds, mcaid_discharges, ip_charges, mcare_discharges, tot_mcare_payment) %>%
+  select(Q1, Q2, Q3, Q4) %>%
   na.omit()
 
 lp.vars <- final.hcris.2012 %>%
-  select(price, penalty) %>% 
-  filter(!is.na(price) & !is.na(penalty))
+  select(price, penalty) %>%
+  na.omit()
 
 m.nn.var <- Matching::Match(Y=lp.vars$price,
                             Tr=lp.vars$penalty,
                             X=lp.covs,
-                            M=4,  #<<
+                            M=1, 
                             Weight=1,
                             estimand="ATE")
 
-nrow(lp.vars)
-nrow(lp.covs)
+
+v.name=data.frame(new=c("Q1", "Q2", "Q3", "Q4"))
+
+### plot
+install.packages("cobalt")
+library(cobalt)
 
 
-v.name=data.frame(new=c("Beds","Medicaid Discharges", "Inaptient Charges",
-                   "Medicare Discharges", "Medicare Payments"))
+love.plot(bal.tab(m.nn.var, covs = lp.covs, treat = lp.vars$penalty), 
+          threshold=0.1, 
+          var.names=v.name,
+          grid=FALSE, sample.names=c("Unmatched", "Matched"),
+          position="top", shapes=c("circle","triangle"),
+          colors=c("black","blue")) + 
+  theme_bw()
 
 ## Nearest neighbor matching with Mahalanobis distance based on quartiles of bed size
+m.nn.md <- Matching::Match(Y=lp.vars$price,
+                           Tr=lp.vars$penalty,
+                           X=lp.covs,
+                           M=1,
+                           Weight=2,
+                           estimand="ATE")
+
 ## Inverse propensity weighting, where the propensity scores are based on quartiles of bed size
+logit.model <- glm(penalty ~ Q1 + Q2 + Q3, family=binomial, data=final.hcris.2012)
+ps <- fitted(logit.model)
+
+
+
+m.nn.ps <- Matching::Match(Y=lp.vars$price,
+                           Tr=lp.vars$penalty,
+                           X=ps,
+                           M=1,
+                           estimand="ATE")
+
 ## Simple linear regression, adjusting for quartiles of bed size using dummy variables and appropriate interactions as discussed in class 
