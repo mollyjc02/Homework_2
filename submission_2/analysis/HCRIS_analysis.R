@@ -189,3 +189,7 @@ m.nn.ps <- Matching::Match(Y=lp.vars$price,
                            estimand="ATE")
 
 ## Simple linear regression, adjusting for quartiles of bed size using dummy variables and appropriate interactions as discussed in class 
+ggplot(lp.vars, aes(x=ps)) + geom_histogram() + 
+  facet_wrap(~ penalty, ncol=1) +
+  theme_bw()
+  
