@@ -65,7 +65,7 @@ ggplot(final.hcris.data, aes(x = as.factor(year), y = log_price)) +
   labs(
     title = "Distribution of Estimated Prices by Year",
     x = "Year",
-    y = "Estimated Price"
+    y = "Log of Estimated Price"
   ) +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -126,7 +126,12 @@ group_by(bed_quartile, penalty) %>%
 summarise(avg_price = mean(price, na.rm = TRUE), .groups = "drop") %>%
 pivot_wider(names_from = penalty, values_from = avg_price, names_prefix = "penalty_")
 
-print(quartile_summary)
+quartile_summary <- quartile_summary %>%
+  rename(
+    `No Penalty` = `penalty_FALSE`, 
+    `Penalty` = `penalty_TRUE`)
+
+view(quartile_summary)
 
 
 # 7)Find the average treatment effect using each of the following estimators: 
@@ -134,16 +139,21 @@ print(quartile_summary)
 install.packages("Matching")
 install.packages("MatchIt")
 install.packages("WeightIt")
+install.packages("cobalt")
+library(Matching)
+library(cobalt)
+library(dplyr)
 
-colnames(final.hcris.2012)
 
-lp.covs <- final.hcris.2012 %>%
-  select(Q1, Q2, Q3, Q4) %>%
-  na.omit()
+###lp.covs <- final.hcris.2012 %>% dplyr::select(Q1, Q2, Q3, Q4, price, penalty) %>% na.omit()
 
-lp.vars <- final.hcris.2012 %>%
-  select(price, penalty) %>%
-  na.omit()
+###lp.vars <- final.hcris.2012 %>% dplyr::select(price, penalty) %>% na.omit()
+
+
+lp.vars <- final.hcris.2012 %>% dplyr::select(Q1, Q2, Q3, Q4, penalty, price) %>% filter(complete.cases(.))
+
+lp.covs <- lp.vars %>% dplyr::select(penalty,price)
+
 
 m.nn.var <- Matching::Match(Y=lp.vars$price,
                             Tr=lp.vars$penalty,
@@ -152,44 +162,105 @@ m.nn.var <- Matching::Match(Y=lp.vars$price,
                             Weight=1,
                             estimand="ATE")
 
+summary(m.nn.var)
 
-v.name=data.frame(new=c("Q1", "Q2", "Q3", "Q4"))
-
-### plot
-install.packages("cobalt")
-library(cobalt)
-
-
-love.plot(bal.tab(m.nn.var, covs = lp.covs, treat = lp.vars$penalty), 
-          threshold=0.1, 
-          var.names=v.name,
-          grid=FALSE, sample.names=c("Unmatched", "Matched"),
-          position="top", shapes=c("circle","triangle"),
-          colors=c("black","blue")) + 
-  theme_bw()
 
 ## Nearest neighbor matching with Mahalanobis distance based on quartiles of bed size
 m.nn.md <- Matching::Match(Y=lp.vars$price,
-                           Tr=lp.vars$penalty,
-                           X=lp.covs,
-                           M=1,
-                           Weight=2,
-                           estimand="ATE")
+                            Tr=lp.vars$penalty,
+                            X=lp.covs,
+                            M=1, 
+                            Weight=1,
+                            estimand="ATE")
+summary(m.nn.md)
 
 ## Inverse propensity weighting, where the propensity scores are based on quartiles of bed size
-logit.model <- glm(penalty ~ Q1 + Q2 + Q3, family=binomial, data=final.hcris.2012)
+logit.model <- glm(penalty ~ Q1 + Q2 + Q3 + Q4, family=binomial, data=lp.vars)
 ps <- fitted(logit.model)
-
-
 
 m.nn.ps <- Matching::Match(Y=lp.vars$price,
                            Tr=lp.vars$penalty,
                            X=ps,
                            M=1,
                            estimand="ATE")
+summary(m.nn.ps)
+
+###NEW IDEA
+lp.vars <- lp.vars %>%
+  mutate(ipw = case_when(
+    penalty==1 ~ 1/ps,
+    penalty==0 ~ 1/(1-ps),
+    TRUE ~ NA_real_
+  ))
+mean.t1 <- lp.vars %>% filter(penalty==1) %>%
+  dplyr::select(price, ipw) %>% summarize(mean_p=weighted.mean(price,w=ipw))
+mean.t0 <- lp.vars %>% filter(penalty==0) %>%
+  dplyr::select(price, ipw) %>% summarize(mean_p=weighted.mean(price,w=ipw))
+m.ps <- mean.t1$mean_p - mean.t0$mean_p
+m.ps
+
+
+
+
+##### THESE  ARE ALL MY THOUGHTS FOR LRM IDK HOW TO DO THIS LMAO
 
 ## Simple linear regression, adjusting for quartiles of bed size using dummy variables and appropriate interactions as discussed in class 
-ggplot(lp.vars, aes(x=ps)) + geom_histogram() + 
-  facet_wrap(~ penalty, ncol=1) +
-  theme_bw()
-  
+reg1.dat <- final.hcris.2012 %>% filter(penalty == 1, complete.cases(.))
+reg0.dat <- final.hcris.2012 %>% filter(penalty == 0, complete.cases(.))
+
+reg1 <- lm(price ~ Q1 + Q2 + Q3, data=reg1.dat)
+reg0 <- lm(price ~ Q1 + Q2 + Q3, data=reg0.dat)
+
+pred1 <- predict(reg1,new=reg1.dat)
+pred0 <- predict(reg0,new=reg0.dat)
+
+ate <- mean(pred1 - pred0)
+ate
+
+
+
+reg.dat <- final.hcris.2012 %>% ungroup() %>% filter(complete.cases(.)) %>%
+  mutate(Q1_diff = penalty * (Q1 - mean(Q1)),
+         Q2_diff = penalty * (Q2 - mean(Q2)),
+         Q3_diff = penalty * (Q3 - mean(Q3)),
+         Q4_diff = penalty * (Q4 - mean(Q4)))
+
+# Fit the regression model with quartile differences and penalty
+reg <- lm(price ~ penalty + Q1 + Q2 + Q3 + 
+            Q1_diff + Q2_diff + Q3_diff,
+          data = reg.dat)
+summary(reg)
+
+ate <- coef(reg)["penaltyTRUE"]
+ate
+
+
+
+
+
+
+
+
+
+
+linreg.model <- lm(price ~ penalty * (Q1 + Q2 + Q3), data = final.hcris.2012)
+summary(linreg.model)
+coef(linreg.model)["penaltyTRUE"]
+
+
+# Combine ATE results from different methods
+ate_results <- data.frame(
+  Estimator = c("Nearest Neighbor (Inverse Variance)", 
+                "Nearest Neighbor (Mahalanobis)", 
+                "Inverse Propensity Weighting", 
+                "Linear Regression"),
+  ATE = c(
+    m.nn.var$est,  # ATE from nearest neighbor matching with inverse variance
+    m.nn.md$est,   # ATE from nearest neighbor matching with Mahalanobis distance
+    m.ps,  # ATE from inverse propensity weighting
+    coef(lm.model)["penalty"]  # ATE from linear regression (penalty effect)
+  )
+)
+
+# Print the table
+print(ate_results)
