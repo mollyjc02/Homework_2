@@ -24,6 +24,7 @@ hcris.vars = rbind(hcris.vars,c('county','S200000','00101','0400','alpha'))
 colnames(hcris.vars)=c("variable","WKSHT_CD","LINE_NUM","CLMN_NUM","source")
 
 
+
 # pulling relevant data out of raw data uploads 
 for (i in 1998:2011) {
   HCRIS.alpha=read_csv(paste0("data/input/HCRIS_v1996/HospitalFY",i,"/hosp_",i,"_ALPHA.CSV"),
@@ -37,7 +38,7 @@ for (i in 1998:2011) {
                                     'ADR_VNDR_CD','FI_CREAT_DT','UTIL_CD','NPR_DT',
                                     'SPEC_IND','FI_RCPT_DT'))
   final.reports = HCRIS.report %>%
-    select(report=RPT_REC_NUM, provider_number=PRVDR_NUM, npi=NPI, 
+    select()(report=RPT_REC_NUM, provider_number=PRVDR_NUM, npi=NPI, 
            fy_start=FY_BGN_DT, fy_end=FY_END_DT, date_processed=PROC_DT, 
            date_created=FI_CREAT_DT, status=RPT_STUS_CD) %>%
     mutate(year=i)
