@@ -29,7 +29,7 @@ Here is a link to my repository: {https://github.com/mollyjc02/Homework_2.git}
 #| include: false
 #| eval: true
 
-load("submission_2/results/Hwk2_workspace.RData") 
+load("C:/Users/Molly/OneDrive - Emory University/Documents/GitHub/Homework_2/submission_2/results/Hwk2_workspace.RData")
 ```
 
 
