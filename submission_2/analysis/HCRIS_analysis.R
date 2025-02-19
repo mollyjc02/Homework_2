@@ -57,7 +57,7 @@ final.hcris.data <- final.hcris.data %>%
   filter(!is.na(price) & price > 0)
 
 ## Step 3: Create a violin plot to show the distribution of estimated prices by year
-final.hcris.data <- final.hcris.data_clean %>%
+final.hcris.data <- final.hcris.data %>%
   mutate(log_price = log(price))
 
 ggplot(final.hcris.data, aes(x = as.factor(year), y = log_price)) +
@@ -145,20 +145,17 @@ library(cobalt)
 library(dplyr)
 
 
-###lp.covs <- final.hcris.2012 %>% dplyr::select(Q1, Q2, Q3, Q4, price, penalty) %>% na.omit()
+matching_data <- final.hcris.2012 %>%
+  filter(!is.na(price) & !is.na(penalty) & !is.na(Q1) & !is.na(Q2) & !is.na(Q3) & !is.na(Q4))
 
-###lp.vars <- final.hcris.2012 %>% dplyr::select(price, penalty) %>% na.omit()
 
-
-lp.vars <- final.hcris.2012 %>% dplyr::select(Q1, Q2, Q3, Q4, penalty, price) %>% filter(complete.cases(.))
-
+lp.vars <- matching_data %>% dplyr::select(Q1, Q2, Q3, Q4, penalty, price) %>% filter(complete.cases(.))
 lp.covs <- lp.vars %>% dplyr::select(penalty,price)
-
 
 m.nn.var <- Matching::Match(Y=lp.vars$price,
                             Tr=lp.vars$penalty,
                             X=lp.covs,
-                            M=1, 
+                            M=1,
                             Weight=1,
                             estimand="ATE")
 
@@ -170,12 +167,12 @@ m.nn.md <- Matching::Match(Y=lp.vars$price,
                             Tr=lp.vars$penalty,
                             X=lp.covs,
                             M=1, 
-                            Weight=1,
+                            Weight=2,
                             estimand="ATE")
 summary(m.nn.md)
 
 ## Inverse propensity weighting, where the propensity scores are based on quartiles of bed size
-logit.model <- glm(penalty ~ Q1 + Q2 + Q3 + Q4, family=binomial, data=lp.vars)
+logit.model <- glm(penalty ~ Q1 + Q2 + Q3, family=binomial, data=lp.vars)
 ps <- fitted(logit.model)
 
 m.nn.ps <- Matching::Match(Y=lp.vars$price,
@@ -186,46 +183,40 @@ m.nn.ps <- Matching::Match(Y=lp.vars$price,
 summary(m.nn.ps)
 
 ###NEW IDEA
-lp.vars <- lp.vars %>%
+ps_model <- glm(penalty ~ Q1 + Q2 + Q3, data = lp.vars, family = binomial)
+
+### Add the predicted propensity scores to the data
+lp.vars.ps <- lp.vars %>% mutate(ps = predict(ps_model, type = "response"))
+
+### Calculate inverse propensity weights (IPW)
+lp.vars.ps <- lp.vars.ps %>%
   mutate(ipw = case_when(
-    penalty==1 ~ 1/ps,
-    penalty==0 ~ 1/(1-ps),
-    TRUE ~ NA_real_
+    penalty == 1 ~ 1 / ps,         # For treated group (penalty == 1)
+    penalty == 0 ~ 1 / (1 - ps),   # For control group (penalty == 0)
+    TRUE ~ NA_real_               # Handle any missing values
   ))
-mean.t1 <- lp.vars %>% filter(penalty==1) %>%
-  dplyr::select(price, ipw) %>% summarize(mean_p=weighted.mean(price,w=ipw))
-mean.t0 <- lp.vars %>% filter(penalty==0) %>%
-  dplyr::select(price, ipw) %>% summarize(mean_p=weighted.mean(price,w=ipw))
-m.ps <- mean.t1$mean_p - mean.t0$mean_p
-m.ps
+
+### Compute weighted average prices for treated (penalty == 1) and control (penalty == 0) groups
+mean.t1 <- lp.vars.ps %>% filter(penalty == 1) %>%
+  dplyr::select(price, ipw) %>%
+  summarize(mean_p = weighted.mean(price, w = ipw, na.rm = TRUE))
+
+mean.t0 <- lp.vars.ps %>% filter(penalty == 0) %>%
+  dplyr::select(price, ipw) %>%
+  summarize(mean_p = weighted.mean(price, w = ipw, na.rm = TRUE))
+m.nn.ps2 <- mean.t1$mean_p - mean.t0$mean_p
+m.nn.ps2
 
 
-
-
-##### THESE  ARE ALL MY THOUGHTS FOR LRM IDK HOW TO DO THIS LMAO
 
 ## Simple linear regression, adjusting for quartiles of bed size using dummy variables and appropriate interactions as discussed in class 
-reg1.dat <- final.hcris.2012 %>% filter(penalty == 1, complete.cases(.))
-reg0.dat <- final.hcris.2012 %>% filter(penalty == 0, complete.cases(.))
-
-reg1 <- lm(price ~ Q1 + Q2 + Q3, data=reg1.dat)
-reg0 <- lm(price ~ Q1 + Q2 + Q3, data=reg0.dat)
-
-pred1 <- predict(reg1,new=reg1.dat)
-pred0 <- predict(reg0,new=reg0.dat)
-
-ate <- mean(pred1 - pred0)
-ate
-
-
-
 reg.dat <- final.hcris.2012 %>% ungroup() %>% filter(complete.cases(.)) %>%
   mutate(Q1_diff = penalty * (Q1 - mean(Q1)),
          Q2_diff = penalty * (Q2 - mean(Q2)),
          Q3_diff = penalty * (Q3 - mean(Q3)),
          Q4_diff = penalty * (Q4 - mean(Q4)))
 
-# Fit the regression model with quartile differences and penalty
+#### Fit the regression model with quartile differences and penalty
 reg <- lm(price ~ penalty + Q1 + Q2 + Q3 + 
             Q1_diff + Q2_diff + Q3_diff,
           data = reg.dat)
@@ -233,13 +224,6 @@ summary(reg)
 
 ate <- coef(reg)["penaltyTRUE"]
 ate
-
-
-
-
-
-
-
 
 
 
@@ -257,10 +241,46 @@ ate_results <- data.frame(
   ATE = c(
     m.nn.var$est,  # ATE from nearest neighbor matching with inverse variance
     m.nn.md$est,   # ATE from nearest neighbor matching with Mahalanobis distance
-    m.ps,  # ATE from inverse propensity weighting
-    coef(lm.model)["penalty"]  # ATE from linear regression (penalty effect)
+    m.nn.ps2,  # ATE from inverse propensity weighting
+    ate  # ATE from linear regression (penalty effect)
   )
 )
 
 # Print the table
 print(ate_results)
+
+
+
+# Other method of printing table 
+linreg.model <- lm(price ~ penalty * (Q1 + Q2 + Q3), data = lp.vars)
+summary(linreg.model)
+
+# Extract ATE and SE
+linreg.ate <- coef(linreg.model)[grep("penalty", names(coef(linreg.model)))[1]]
+linreg.se <- coef(summary(linreg.model))[grep("penalty", rownames(coef(summary(linreg.model))))[1], "Std. Error"]
+
+# Collect results
+nn_invvar_ate <- summary(m.nn.var)$est
+nn_invvar_se <- summary(m.nn.var)$se
+
+nn_md_ate <- summary(m.nn.md)$est
+nn_md_se <- summary(m.nn.md)$se
+
+ipw_ate <- summary(m.nn.ps)$est
+ipw_se <- summary(m.nn.ps)$se
+
+# Final summary table
+results_table <- tibble(
+  Estimator = c("NN Matching (Inverse Variance)", 
+                "NN Matching (Mahalanobis)", 
+                "Inverse Propensity Weighting", 
+                "Simple Linear Regression"),
+  ATE = c(nn_invvar_ate, nn_md_ate, ipw_ate, linreg.ate),
+  SE = c(nn_invvar_se, nn_md_se, ipw_se, linreg.se)
+)
+
+# Print the results
+print(results_table)
+
+
+save.image("submission_2/results/Hwk2_workspace.RData")
