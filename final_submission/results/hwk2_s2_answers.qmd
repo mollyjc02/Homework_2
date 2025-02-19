@@ -4,7 +4,7 @@ subtitle: "ECON 470, Spring 2025"
 author: "Molly Catlin"
 format:
   pdf:
-    output-file: "catlin_molly_hwk2_s2"
+    output-file: "catlin_molly_hwk2_fs"
     output-ext:  "pdf"
     header-includes:
       - \usepackage{float}
@@ -29,7 +29,7 @@ Here is a link to my repository: {https://github.com/mollyjc02/Homework_2.git}
 #| include: false
 #| eval: true
 
-load("C:/Users/Molly/OneDrive - Emory University/Documents/GitHub/Homework_2/submission_2/results/Hwk2_workspace.RData")
+load("C:/Users/Molly/OneDrive - Emory University/Documents/GitHub/Homework_2/final_submission/results/Hwk2_workspace.RData")
 ```
 
 
