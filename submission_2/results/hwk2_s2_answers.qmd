@@ -1,5 +1,5 @@
 ---
-title: "Homework 2"
+title: "Homework 1"
 subtitle: "ECON 470, Spring 2025"
 author: "Molly Catlin"
 format:
@@ -57,8 +57,7 @@ theme_minimal()
 
 ```{r} 
 #| echo: false
-#| label: tbl-plans
-#| tbl-cap: Multiple reports
+#| eval: true
 
 cat("Number of unique hospital IDs (Medicare provider numbers):", unique_hospital_count, "\n")
 ```
