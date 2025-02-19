@@ -1,0 +1,63 @@
+---
+title: "Homework 1"
+subtitle: "ECON 470, Spring 2025"
+author: "Molly Catlin"
+format:
+  pdf:
+    output-file: "catlin_molly_hwk2_s2"
+    output-ext:  "pdf"
+    header-includes:
+      - \usepackage{float}
+      - \floatplacement{table}{H}
+---
+
+```{r}
+#| include: false
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, readr, readxl, hrbrthemes, fixest,
+               scales, gganimate, gapminder, gifski, png, tufte, plotly, OECD,
+               ggrepel, survey, foreign, devtools, pdftools, kableExtra, modelsummary,
+               kableExtra)
+```
+
+Here is a link to my repository: {https://github.com/mollyjc02/Homework_2.git}
+
+\newpage 
+
+```{r}
+#| include: false
+#| eval: true
+
+load("C:/Users/Molly/OneDrive - Emory University/Documents/GitHub/Homework_2/submission_2/results/Hwk2_workspace.RData")
+```
+
+
+\noindent 1. How many hospitals filed more than one report in the same year? Show your answer as a line graph of the number of hospitals over time. 
+
+```{r} 
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: Hospitals that Filed Multiple Reports
+library(ggplot2)
+
+ggplot(multi_report_counts, aes(x = fyear, y = num_hospitals)) +
+geom_line(color = "blue", size = 1) +
+geom_point(color = "red", size = 2) +
+labs(
+title = "Hospitals Filing Multiple Reports Per Year",
+x = "Year",
+y = "Number of Hospitals",
+caption = "Source: HCRIS Data (1996 & 2010 Versions)"
+) +
+theme_minimal()
+```
+
+\noindent 2. After removing/combining multiple reports, how many unique hospital IDs (Medicare provider numbers) exist in the data?
+
+```{r} 
+#| echo: false
+#| eval: true
+
+cat("Number of unique hospital IDs (Medicare provider numbers):", unique_hospital_count, "\n")
+```
