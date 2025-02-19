@@ -38,7 +38,8 @@ load("submission_2/results/Hwk2_workspace.RData")
 ```{r} 
 #| echo: false
 #| label: tbl-plans
-#| tbl-cap: Multiple reports
+#| tbl-cap: Hospitals that Filed Multiple Reports
+library(ggplot2)
 
 ggplot(multi_report_counts, aes(x = fyear, y = num_hospitals)) +
 geom_line(color = "blue", size = 1) +
