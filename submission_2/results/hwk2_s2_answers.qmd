@@ -14,15 +14,145 @@ format:
 ```{r}
 #| include: false
 
-hospital_counts_over_time = 
-  duplicate.hospitals %>%
-  group_by(fyear) %>%
-  summarise(num_hospitals = n())  # Count unique hospitals per year
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, readr, readxl, hrbrthemes, fixest,
+               scales, gganimate, gapminder, gifski, png, tufte, plotly, OECD,
+               ggrepel, survey, foreign, devtools, pdftools, kableExtra, modelsummary,
+               kableExtra)
+```
 
-# Plot the number of hospitals over time
-ggplot(hospital_counts_over_time, aes(x = fyear, y = num_hospitals)) +
-  geom_line(color = "blue", size = 1.2) +
-  labs(title = "Number of Hospitals Filing More Than One Report per Year",
-       x = "Year",
-       y = "Number of Hospitals") +
-  theme_minimal()
+Here is a link to my repository: {https://github.com/mollyjc02/Homework_2.git}
+
+\newpage 
+
+```{r}
+#| include: false
+#| eval: true
+
+load("submission_2/results/Hwk2_workspace.RData") 
+```
+
+
+\noindent 1. How many hospitals filed more than one report in the same year? Show your answer as a line graph of the number of hospitals over time. 
+
+```{r} 
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: Multiple reports
+
+ggplot(multi_report_counts, aes(x = fyear, y = num_hospitals)) +
+geom_line(color = "blue", size = 1) +
+geom_point(color = "red", size = 2) +
+labs(
+title = "Hospitals Filing Multiple Reports Per Year",
+x = "Year",
+y = "Number of Hospitals",
+caption = "Source: HCRIS Data (1996 & 2010 Versions)"
+) +
+theme_minimal()
+```
+
+\noindent 2. After removing/combining multiple reports, how many unique hospital IDs (Medicare provider numbers) exist in the data?
+
+```{r} 
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: Multiple reports
+
+cat("Number of unique hospital IDs (Medicare provider numbers):", unique_hospital_count, "\n")
+```
+
+\noindent 3. What is the distribution of total charges (tot_charges in the data) in each year? 
+
+```{r} 
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: Multiple reports
+
+ggplot(final.hcris.data, aes(x = factor(year), y = tot_charges)) +
+geom_violin(fill = "lightblue", color = "darkblue", alpha = 0.6) +
+scale_y_log10() + # Apply log scale to handle skewed distributions
+labs(
+title = "Distribution of Total Charges by Year",
+x = "Year",
+y = "Total Charges (log scale)",
+caption = "Source: HCRIS Data (1996 & 2010 Versions)"
+) +
+theme_minimal()
+
+```
+
+\noindent 4. What is the distribution of estimated prices in each year? 
+
+```{r} 
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: Multiple reports 
+
+
+ggplot(final.hcris.data, aes(x = as.factor(year), y = log_price)) +
+  geom_violin(trim = TRUE, fill = "skyblue", color = "black") +
+  labs(
+    title = "Distribution of Estimated Prices by Year",
+    x = "Year",
+    y = "Log of Estimated Price"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+For the rest of the assignment, I have included only observations in 2012. So I am now dealing with cross-sectional data in which some hospitals are penalized and some are not. 
+
+\noindent 5. Calculate the average price among penalized versus non-penalized hospitals.
+
+```{r} 
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: Multiple reports
+
+cat("Average price among penalized hospitals: ", mean.pen, "\n")
+cat("Average price among non-penalized hospitals: ", mean.nopen, "\n")
+```
+
+\noindent 6. Split hospitals into quartiles based on bed size and provide a table of the average price among treated/control groups for each quartile.
+
+```{r} 
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: Multiple reports
+
+knitr::kable(
+  quartile_summary, 
+  col.names = c("Bed Quartile", "No Penalty", "Penalty"),
+  caption = "Average Prices by Bed Quartile and Penalty Status",
+  format = "markdown"
+)
+
+```
+
+\noindent 7. Find the average treatment effect using each of the following estimators, and present your results in a single table: 
+a. Nearest neighbor matching (1-to-1) with inverse variance distance based on quartiles of bed size
+b. Nearest neighbor matching (1-to-1) with Mahalanobis distance based on quartiles of bed size
+c. Inverse propensity weighting, where the propensity scores are based on quartiles of bed size
+d. Simple linear regression, adjusting for quartiles of bed size using dummy variables and appropriate interactions as discussed in class
+
+(not sure which/if either is back) 
+
+```{r} 
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: Multiple reports
+
+kable(ate_results, 
+      caption = "Average Treatment Effect (ATE) Estimates by Estimator")
+```
+
+```{r} 
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: Multiple reports
+
+kable(results_table, 
+      caption = "Average Treatment Effect (ATE) Estimates with Standard Errors")
+```
