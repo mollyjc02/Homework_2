@@ -23,6 +23,7 @@ theme_minimal()
 
 # 2)Count the number of unique hospital IDs
 fig.unique <- final.hcris.data %>% group_by(year) %>% 
+  filter(year >= 1999 & year <= 2017) %>%   
   summarize(unique_hospital_count=n()) %>%
   ggplot(aes(x=as.factor(year), y=unique_hospital_count, group=1)) + 
   geom_line() + 
@@ -35,7 +36,6 @@ fig.unique <- final.hcris.data %>% group_by(year) %>%
   theme(axis.text.x = element_text(angle=70, hjust=1))
 print(fig.unique)
 
-#### -> cut off ends 
 
 # 3)What is the distribution of total charges in each year? 
 charge.data <- final.hcris.data %>% 
@@ -80,7 +80,7 @@ ggplot(price.data, aes(x = as.factor(year), y = price)) +
     y = "Estimated Price"
   ) +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 70, hjust = 1))
 
 
 # 5)Calculate the average price among penalized versus non-penalized hospitals. 
@@ -143,6 +143,7 @@ Q4 == 1 ~ "Q4"
 group_by(bed_quartile, penalty) %>%
 summarise(avg_price = mean(price, na.rm = TRUE), .groups = "drop") %>%
 pivot_wider(names_from = penalty, values_from = avg_price, names_prefix = "penalty_")
+
 
 quartile_summary <- quartile_summary %>%
   rename(
@@ -221,5 +222,5 @@ summary(reg)
 ate <- coef(reg)["penaltyTRUE"]
 ate
 
-rm(list=c("final.hcris.2012", "final.hcris.data", "duplicate.hcris", "bed_quartiles", "bed_lower", "bed_upper", "price_cutoffs", "logit.model", "ps"))
-save.image("final_submission/results/Hwk2_workspace.RData")
+##rm(list=c("final.hcris.2012", "final.hcris.data", "duplicate.hcris", "bed_quartiles", "bed_lower", "bed_upper", "price_cutoffs", "logit.model", "ps"))
+##save.image("final_submission/Hwk2_workspace.RData")

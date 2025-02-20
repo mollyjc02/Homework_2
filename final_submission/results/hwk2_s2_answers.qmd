@@ -13,6 +13,7 @@ format:
 
 ```{r}
 #| include: false
+#| eval: false
 
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, readr, readxl, hrbrthemes, fixest,
@@ -28,13 +29,14 @@ Here is a link to my repository: {https://github.com/mollyjc02/Homework_2.git}
 
 ```{r}
 #| include: false
-#| eval: true
-install.packages("here")
-library(here)
+
+getwd()
+
+load("C:/Users/Molly/OneDrive - Emory University/Documents/GitHub/Homework_2/final_submission/Hwk2_workspace.RData") 
 
 # Load the data using a relative path
-here::i_am("final_submission/results/Hwk2_workspace.RData")
-load(here("final_submission", "results", "Hwk2_workspace.RData"))
+###here::i_am("final_submission/results/Hwk2_workspace.RData")
+###load(here("final_submission", "results", "Hwk2_workspace.RData"))
 ```
 
 
@@ -44,6 +46,7 @@ load(here("final_submission", "results", "Hwk2_workspace.RData"))
 #| echo: false
 #| label: tbl-plans
 #| tbl-cap: Hospitals that Filed Multiple Reports
+
 library(ggplot2)
 
 ggplot(multi_report_counts, aes(x = fyear, y = num_hospitals)) +
@@ -63,7 +66,6 @@ theme_minimal()
 
 ```{r} 
 #| echo: false
-#| eval: true
 
 print(fig.unique)
 ```
