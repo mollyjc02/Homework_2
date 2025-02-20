@@ -25,20 +25,16 @@ Here is a link to my repository: {https://github.com/mollyjc02/Homework_2.git}
 
 \newpage 
 
+
 ```{r}
 #| include: false
 #| eval: true
 install.packages("here")
 library(here)
 
-if (file.exists(here("final_submission", "results", "Hwk2_workspace.RData"))) {
-  load(here("final_submission", "results", "Hwk2_workspace.RData"))
-} else {
-  stop("Workspace file not found. Please check the path.")
-}
-
 # Load the data using a relative path
-##load(here("final_submission", "results", "Hwk2_workspace.RData"))
+here::i_am("final_submission/results/Hwk2_workspace.RData")
+load(here("final_submission", "results", "Hwk2_workspace.RData"))
 ```
 
 
