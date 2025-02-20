@@ -53,11 +53,120 @@ caption = "Source: HCRIS Data (1996 & 2010 Versions)"
 theme_minimal()
 ```
 
+
 \noindent 2. After removing/combining multiple reports, how many unique hospital IDs (Medicare provider numbers) exist in the data?
 
 ```{r} 
 #| echo: false
 #| eval: true
 
-cat("Number of unique hospital IDs (Medicare provider numbers):", unique_hospital_count, "\n")
+print(fig.unique)
+```
+
+
+\noindent 3. What is the distribution of total charges (tot_charges in the data) in each year?
+
+```{r}
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: Multiple reports
+
+ggplot(charge.data, aes(x = factor(year), y = tot_charges)) +
+geom_violin(fill = "lightblue", color = "darkblue", alpha = 0.6) +
+scale_y_log10() + # Apply log scale to handle skewed distributions
+labs(
+title = "Distribution of Total Charges by Year",
+x = "Year",
+y = "Total Charges (log scale)",
+caption = "Source: HCRIS Data (1996 & 2010 Versions)"
+) +
+theme_minimal()
+```
+
+
+\noindent 4. What is the distribution of estimated prices in each year?
+
+```{r}
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: Multiple reports
+
+ggplot(price.data, aes(x = as.factor(year), y = price)) +
+  geom_violin(trim = TRUE, fill = "skyblue", color = "black") +
+  labs(
+    title = "Distribution of Estimated Prices by Year",
+    x = "Year",
+    y = "Estimated Price"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 70, hjust = 1))
+```
+
+
+\newpage 
+
+For the rest of the assignment, I have included only observations in 2012. So I am now dealing with cross-sectional data in which some hospitals are penalized and some are not.
+
+
+\noindent 5. Calculate the average price among penalized versus non-penalized hospitals.
+
+
+```{r}
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: Multiple reports
+
+cat("Average price among penalized hospitals: ", mean.pen, "\n")
+cat("Average price among non-penalized hospitals: ", mean.nopen, "\n")
+```
+
+
+\noindent 6. Split hospitals into quartiles based on bed size and provide a table of the average price among treated/control groups for each quartile.
+
+```{r}
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: Multiple reports
+
+knitr::kable(
+  quartile_summary,
+  col.names = c("Bed Quartile", "No Penalty", "Penalty"),
+  caption = "Average Prices by Bed Quartile and Penalty Status",
+  format = "markdown"
+)
+```
+
+
+\noindent 7. Find the average treatment effect using each of the following estimators, and present your results in a single table:
+a. Nearest neighbor matching (1-to-1) with inverse variance distance based on quartiles of bed size
+b. Nearest neighbor matching (1-to-1) with Mahalanobis distance based on quartiles of bed size
+c. Inverse propensity weighting, where the propensity scores are based on quartiles of bed size
+d. Simple linear regression, adjusting for quartiles of bed size using dummy variables and appropriate interactions as discussed in class
+
+```{r}
+#| echo: false
+#| label: tbl-plans
+#| tbl-cap: Multiple reports
+
+# Extract ATE estimates
+ate_near_match <- near.match$est
+ate_mal_match <- mal.match$est
+ate_ipw_diff <- ipw.diff
+ate_regression <- ate
+
+# Create a data frame summarizing the results
+ate_estimates <- data.frame(
+  Method = c(
+    "Nearest Matching (Inverse Variance)",
+    "Nearest Matching (Mahalanobis Distance)",
+    "Inverse Propensity Weighting (IPW)",
+    "Linear Regression"
+  ),
+  ATE_Estimate = c(ate_near_match, ate_mal_match, ate_ipw_diff, ate_regression)
+)
+
+# Print the table using knitr::kable()
+knitr::kable(ate_estimates, 
+             caption = "ATE Estimates from Different Methods", 
+             col.names = c("Method", "ATE Estimate"))
 ```
