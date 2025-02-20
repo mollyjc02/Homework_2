@@ -222,5 +222,5 @@ summary(reg)
 ate <- coef(reg)["penaltyTRUE"]
 ate
 
-##rm(list=c("final.hcris.2012", "final.hcris.data", "duplicate.hcris", "bed_quartiles", "bed_lower", "bed_upper", "price_cutoffs", "logit.model", "ps"))
-##save.image("final_submission/Hwk2_workspace.RData")
+rm(list=c("final.hcris.2012", "final.hcris.data", "duplicate.hcris", "bed_quartiles", "bed_lower", "bed_upper", "price_cutoffs", "logit.model", "ps"))
+save.image("final_submission/Hwk2_workspace.RData")

@@ -5,15 +5,17 @@ author: "Molly Catlin"
 format:
   pdf:
     output-file: "catlin_molly_hwk2_fs"
-    output-ext:  "pdf"
+    output-ext: "pdf"
     header-includes:
       - \usepackage{float}
       - \floatplacement{table}{H}
 ---
 
+
 ```{r}
 #| include: false
 #| eval: false
+
 
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, readr, readxl, hrbrthemes, fixest,
@@ -22,17 +24,23 @@ pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, readr, readxl, hrbrthemes, 
                kableExtra)
 ```
 
+
 Here is a link to my repository: {https://github.com/mollyjc02/Homework_2.git}
 
-\newpage 
+
+\newpage
+
 
 
 ```{r}
 #| include: false
 
+
 getwd()
 
-load("C:/Users/Molly/OneDrive - Emory University/Documents/GitHub/Homework_2/final_submission/Hwk2_workspace.RData") 
+
+load("C:/Users/Molly/OneDrive - Emory University/Documents/GitHub/Homework_2/final_submission/Hwk2_workspace.RData")
+
 
 # Load the data using a relative path
 ###here::i_am("final_submission/results/Hwk2_workspace.RData")
@@ -40,14 +48,19 @@ load("C:/Users/Molly/OneDrive - Emory University/Documents/GitHub/Homework_2/fin
 ```
 
 
-\noindent 1. How many hospitals filed more than one report in the same year? Show your answer as a line graph of the number of hospitals over time. 
 
-```{r} 
+
+\noindent 1. How many hospitals filed more than one report in the same year? Show your answer as a line graph of the number of hospitals over time.
+
+
+```{r}
 #| echo: false
-#| label: tbl-plans
+#| label: duplicate-hospitals
 #| tbl-cap: Hospitals that Filed Multiple Reports
 
+
 library(ggplot2)
+
 
 ggplot(multi_report_counts, aes(x = fyear, y = num_hospitals)) +
 geom_line(color = "blue", size = 1) +
@@ -62,21 +75,30 @@ theme_minimal()
 ```
 
 
+
+
 \noindent 2. After removing/combining multiple reports, how many unique hospital IDs (Medicare provider numbers) exist in the data?
 
-```{r} 
+
+```{r}
 #| echo: false
+#| label: unique-hospitals 
+#| tbl-cap: Unique Hospitals 
 
 print(fig.unique)
 ```
 
 
+
+
 \noindent 3. What is the distribution of total charges (tot_charges in the data) in each year?
+
 
 ```{r}
 #| echo: false
-#| label: tbl-plans
-#| tbl-cap: Multiple reports
+#| label: charge-distributions
+#| tbl-cap: Charge Distribution by Year
+
 
 ggplot(charge.data, aes(x = factor(year), y = tot_charges)) +
 geom_violin(fill = "lightblue", color = "darkblue", alpha = 0.6) +
@@ -91,12 +113,16 @@ theme_minimal()
 ```
 
 
+
+
 \noindent 4. What is the distribution of estimated prices in each year?
+
 
 ```{r}
 #| echo: false
-#| label: tbl-plans
-#| tbl-cap: Multiple reports
+#| label: price-distributions
+#| tbl-cap: Estimated Price Distribution by Year
+
 
 ggplot(price.data, aes(x = as.factor(year), y = price)) +
   geom_violin(trim = TRUE, fill = "skyblue", color = "black") +
@@ -110,30 +136,30 @@ ggplot(price.data, aes(x = as.factor(year), y = price)) +
 ```
 
 
-\newpage 
+
+\newpage
 
 For the rest of the assignment, I have included only observations in 2012. So I am now dealing with cross-sectional data in which some hospitals are penalized and some are not.
 
-
 \noindent 5. Calculate the average price among penalized versus non-penalized hospitals.
-
 
 ```{r}
 #| echo: false
-#| label: tbl-plans
-#| tbl-cap: Multiple reports
+#| label: price-by-pen
+#| tbl-cap: Average Price, Penalized vs Not
 
 cat("Average price among penalized hospitals: ", mean.pen, "\n")
 cat("Average price among non-penalized hospitals: ", mean.nopen, "\n")
 ```
 
 
+
 \noindent 6. Split hospitals into quartiles based on bed size and provide a table of the average price among treated/control groups for each quartile.
 
 ```{r}
 #| echo: false
-#| label: tbl-plans
-#| tbl-cap: Multiple reports
+#| label: price-by-quartile
+#| tbl-cap: Average Price by Treatment Status and Bed Size 
 
 knitr::kable(
   quartile_summary,
@@ -144,6 +170,7 @@ knitr::kable(
 ```
 
 
+
 \noindent 7. Find the average treatment effect using each of the following estimators, and present your results in a single table:
 a. Nearest neighbor matching (1-to-1) with inverse variance distance based on quartiles of bed size
 b. Nearest neighbor matching (1-to-1) with Mahalanobis distance based on quartiles of bed size
@@ -152,14 +179,15 @@ d. Simple linear regression, adjusting for quartiles of bed size using dummy var
 
 ```{r}
 #| echo: false
-#| label: tbl-plans
-#| tbl-cap: Multiple reports
+#| label: ate-table
+#| tbl-cap: ATE Estimates
 
 # Extract ATE estimates
 ate_near_match <- near.match$est
 ate_mal_match <- mal.match$est
 ate_ipw_diff <- ipw.diff
 ate_regression <- ate
+
 
 # Create a data frame summarizing the results
 ate_estimates <- data.frame(
@@ -172,8 +200,9 @@ ate_estimates <- data.frame(
   ATE_Estimate = c(ate_near_match, ate_mal_match, ate_ipw_diff, ate_regression)
 )
 
+
 # Print the table using knitr::kable()
-knitr::kable(ate_estimates, 
-             caption = "ATE Estimates from Different Methods", 
+knitr::kable(ate_estimates,
+             caption = "ATE Estimates from Different Methods",
              col.names = c("Method", "ATE Estimate"))
 ```
