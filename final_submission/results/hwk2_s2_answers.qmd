@@ -16,7 +16,6 @@ format:
 #| include: false
 #| eval: false
 
-
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse, ggplot2, dplyr, lubridate, readr, readxl, hrbrthemes, fixest,
                scales, gganimate, gapminder, gifski, png, tufte, plotly, OECD,
@@ -35,30 +34,29 @@ Here is a link to my repository: {https://github.com/mollyjc02/Homework_2.git}
 ```{r}
 #| include: false
 
+####load("C:/Users/Molly/OneDrive - Emory University/Documents/GitHub/Homework_2/final_submission/Hwk2_workspace.RData")
 
-load("C:/Users/Molly/OneDrive - Emory University/Documents/GitHub/Homework_2/final_submission/Hwk2_workspace.RData")
-
-####install.packages("here")
 library(here)
+here()
 
 # Load the data using a relative path
-##here::i_am("final_submission/Hwk2_workspace.RData")
-##load(here("final_submission",  "Hwk2_workspace.RData"))
+load(here("final_submission/Hwk2_workspace.RData")) 
 ```
 
 
 
 
-\noindent 1. How many hospitals filed more than one report in the same year? Show your answer as a line graph of the number of hospitals over time.
+\noindent **1. How many hospitals filed more than one report in the same year? Show your answer as a line graph of the number of hospitals over time.**
 
 
 ```{r}
 #| echo: false
 #| label: duplicate-hospitals
 #| tbl-cap: Hospitals that Filed Multiple Reports
+library(ggplot2)
 
 ggplot(multi_report_counts, aes(x = fyear, y = num_hospitals)) +
-geom_line(color = "blue", size  = 1) +
+geom_line(color = "blue", linewidth  = 1) +
 geom_point(color = "red", size  = 2) +
 labs(
 title = "Hospitals Filing Multiple Reports Per Year",
@@ -72,7 +70,7 @@ theme_minimal()
 
 \newpage
 
-\noindent 2. After removing/combining multiple reports, how many unique hospital IDs (Medicare provider numbers) exist in the data?
+\noindent **2. After removing/combining multiple reports, how many unique hospital IDs (Medicare provider numbers) exist in the data?**
 
 
 ```{r}
@@ -86,7 +84,7 @@ print(fig.unique)
 
 \newpage
 
-\noindent 3. What is the distribution of total charges (tot_charges in the data) in each year?
+\noindent **3. What is the distribution of total charges (tot_charges in the data) in each year?**
 
 
 ```{r}
@@ -110,7 +108,7 @@ ggplot(charge.data, aes(x = factor(year), y = tot_charges)) +
 
 \newpage
 
-\noindent 4. What is the distribution of estimated prices in each year?
+\noindent **4. What is the distribution of estimated prices in each year?**
 
 ```{r}
 #| echo: false
@@ -133,16 +131,16 @@ ggplot(price.data, aes(x = as.factor(year), y = price)) +
 
 \newpage
 
-For the rest of the assignment, I have included only observations in 2012. So I am now dealing with cross-sectional data in which some hospitals are penalized and some are not.
+**For the rest of the assignment, I have included only observations in 2012. So I am now dealing with cross-sectional data in which some hospitals are penalized and some are not.**
 
 
-\noindent 5. Calculate the average price among penalized versus non-penalized hospitals.
+\noindent **5. Calculate the average price among penalized versus non-penalized hospitals.**
 
 The average price among penalized hospitals is `r mean.pen`, while the average price among non-penalized hospitals is `r mean.nopen`. 
 
 \newpage
 
-\noindent 6. Split hospitals into quartiles based on bed size and provide a table of the average price among treated/control groups for each quartile.
+\noindent **6. Split hospitals into quartiles based on bed size and provide a table of the average price among treated/control groups for each quartile.**
 
 ```{r}
 #| echo: false
@@ -161,7 +159,7 @@ knitr::kable(
 \newpage
 
 
-\noindent 7. Find the average treatment effect based on quartiles of bed size using each of the following estimators: nearest neighbor matching with inverse variance distance, nearest neighbor matching with Mahalanobis distance, inverse propensity weighting, and simple linear regression.
+\noindent **7. Find the average treatment effect based on quartiles of bed size using each of the following estimators: nearest neighbor matching with inverse variance distance, nearest neighbor matching with Mahalanobis distance, inverse propensity weighting, and simple linear regression.**
 
 ```{r}
 #| echo: false
@@ -192,3 +190,6 @@ knitr::kable(ate_estimates,
              caption = "ATE Estimates from Different Methods",
              col.names = c("Method", "ATE Estimate"))
 ```
+
+
+\noindent **8. f**
